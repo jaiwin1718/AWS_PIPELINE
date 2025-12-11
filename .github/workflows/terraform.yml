@@ -15,31 +15,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # AWS OIDC auth
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::787068570923:role/gitterraform
           aws-region: us-east-1
 
+      # Install terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      # Terraform INIT
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: ./terraform
         run: terraform init
 
+      # Terraform VALIDATE
       - name: Terraform Validate
-        working-directory: terraform
+        working-directory: ./terraform
         run: terraform validate
 
+      # Terraform PLAN
       - name: Terraform Plan
-        working-directory: terraform
+        working-directory: ./terraform
         run: terraform plan
 
+      # Terraform APPLY
       - name: Terraform Apply
         if: github.ref == 'refs/heads/master'
-        working-directory: terraform
+        working-directory: ./terraform
         run: terraform apply -auto-approve
