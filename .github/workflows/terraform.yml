@@ -4,10 +4,10 @@ on:
   push:
     branches: ["master"]
   pull_request:
-    branches: ["master]"]
+    branches: ["master"]
 
 permissions:
-  id-token: write   # Required for OIDC
+  id-token: write
   contents: read
 
 jobs:
@@ -36,6 +36,6 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
 
-      - name: Terraform Apply (Auto)
-        if: github.ref == 'refs/heads/main'
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/master'
         run: terraform apply -auto-approve
