@@ -7,59 +7,42 @@ on:
     branches: ["master"]
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write     # REQUIRED for OIDC
+  contents: read      # REQUIRED to read repo
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout Code
+      # 1. Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 2. Request OIDC Token from GitHub (Required for debug)
-      - name: Request OIDC Token
-        id: github_token
-        run: |
-          echo "request_url=${ACTIONS_ID_TOKEN_REQUEST_URL}" >> $GITHUB_OUTPUT
-          echo "request_token=${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" >> $GITHUB_OUTPUT
-
-      # 3. Debug / Inspect OIDC Token
-      - name: Debug GitHub OIDC token
-        run: |
-          echo "Fetching OIDC token info..."
-          TOKEN_URL="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com"
-          curl -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "$TOKEN_URL" | jq .
-        env:
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ steps.github_token.outputs.request_url }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ steps.github_token.outputs.request_token }}
-
-      # 4. Configure AWS OIDC Credentials
+      # 2. Configure AWS credentials using OIDC
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::787068570923:role/github-terraform-role
+          role-to-assume: arn:aws:iam::787068570923:role/gitterraform
           aws-region: us-east-1
 
-      # 5. Setup Terraform
+      # 3. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # 6. Terraform Init
+      # 4. Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # 7. Terraform Validate
+      # 5. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # 8. Terraform Plan
+      # 6. Terraform Plan
       - name: Terraform Plan
         run: terraform plan
 
-      # 9. Terraform Apply
-      - name: Terraform Apply (Auto)
+      # 7. Terraform Apply
+      - name: Terraform Apply
         if: github.ref == 'refs/heads/master'
         run: terraform apply -auto-approve
