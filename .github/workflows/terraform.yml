@@ -15,27 +15,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout Code
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
+      # 2. Request OIDC Token from GitHub (Required for debug)
+      - name: Request OIDC Token
+        id: github_token
+        run: |
+          echo "request_url=${ACTIONS_ID_TOKEN_REQUEST_URL}" >> $GITHUB_OUTPUT
+          echo "request_token=${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" >> $GITHUB_OUTPUT
+
+      # 3. Debug / Inspect OIDC Token
+      - name: Debug GitHub OIDC token
+        run: |
+          echo "Fetching OIDC token info..."
+          TOKEN_URL="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com"
+          curl -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "$TOKEN_URL" | jq .
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ steps.github_token.outputs.request_url }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ steps.github_token.outputs.request_token }}
+
+      # 4. Configure AWS OIDC Credentials
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::787068570923:role/github-terraform-role
           aws-region: us-east-1
 
+      # 5. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      # 6. Terraform Init
       - name: Terraform Init
         run: terraform init
 
+      # 7. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
+      # 8. Terraform Plan
       - name: Terraform Plan
         run: terraform plan
 
-      - name: Terraform Apply
+      # 9. Terraform Apply
+      - name: Terraform Apply (Auto)
         if: github.ref == 'refs/heads/master'
         run: terraform apply -auto-approve
