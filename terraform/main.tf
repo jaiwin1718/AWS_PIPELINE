@@ -18,6 +18,6 @@ resource "aws_instance" "test_ec2" {
   instance_type = var.instance_type
 
   tags = {
-    Name = "test-ec2"
+    Name = "gitactions-ec2"
   }
 }
